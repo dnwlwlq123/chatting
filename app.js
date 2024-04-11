@@ -3,12 +3,14 @@ const http = require('http');
 const path = require('path');
 const logger = require('morgan');
 const cookieParser = require('cookie-parser');
-
 const app = express();
+const axios = require('./node_modules/axios/dist/axios.js');
+// const utils = require('./utils.js');
 const server = http.createServer(app);
 const io = require('socket.io')(server);
 
-//sql 연동
+
+//-------------------------------------------------sql 연동
 const mysql      = require('mysql');
 const connection = mysql.createConnection({
   host     : 'localhost',
@@ -19,17 +21,31 @@ const connection = mysql.createConnection({
 
 connection.connect();
 
-connection.query('SELECT * from chating', (error, rows, fields) => {
+connection.query('SELECT * from chating where username = "박정연"', (error, result, fields) => {
   if (error) throw error;
-  console.log('User info is: ', rows);
+  console.log(result);
 });
 
 connection.end();
 
+//------------------------------Tomcat - node.js (Restful.API연동)
+// POST 요청 보내기
+// app.use(function (req, res, next) {
+//   var allowedOrigins = ["http://localhost:8080"];
+//   var origin = req.headers.origin;
+//
+//   res.setHeader("Content-Type", 'application/json; charset="utf-8"');
+//
+//   if (allowedOrigins.indexOf(origin) > -1) {
+//     res.setHeader("Access-Control-Allow-Origin", origin);
+//   }
+//
+//   res.setHeader("Access-Control-Allow-Headers", "X-Requested-With");
+//   res.setHeader("Access-Control-Allow-Methods", "POST, GET, OPTIONS, DELETE");
+//   next();
+// });
 
-
-
-// view engine setup
+// --------------------------------------------------------view engine setup
 app.set('views', path.join(__dirname, '/views'));
 app.set('view engine', 'ejs');
 
