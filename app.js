@@ -16,36 +16,67 @@ const connection = mysql.createConnection({
   host     : 'localhost',
   user     : 'root',
   password : '1234',
-  database : 'miniproject'
+  database : 'miniproject',
+  dataString : 'date'
 });
 
 connection.connect();
 
-connection.query('SELECT * from chating where username = "박정연"', (error, result, fields) => {
-  if (error) throw error;
+
+// 이미 선언된 io 변수가 있을 때는 새로운 변수명으로 socket.io를 가져옵니다.
+
+//const io = socketIO(server);
+
+
+
+connection.query('SELECT username FROM chating WHERE username = "박정연"', (error, result, fields) => {
+  if (error) {
+    console.error('쿼리 실행 중 에러 발생:', error);
+    // 에러 처리: 에러가 발생하면 여기서 종료하고 에러를 출력합니다.
+    return;
+  }
+
   console.log(result);
+
+  io.on('connection', (socket) => {
+    socket.on('username', function (username) {
+      console.log('사용자와 연결되었습니다.');
+    });
+
+  // 쿼리 결과가 있는 경우에만 socket.emit을 호출
+  if (result.length > 0) {
+    const username = result[0].username;
+    // 클라이언트로 UserId 보내기
+    socket.emit('username', username);
+  }
+  // 소켓 이벤트 처리
+
+
+    // 여기에 소켓 이벤트 핸들러 추가
+    socket.on('msg', (message) => {
+      console.log('메시지를 받았습니다:', message);
+      // 받은 메시지를 모든 클라이언트에게 전송
+      socket.broadcast.emit('msg', message);
+    });
+
+
+
+    // 클라이언트와의 연결이 종료되었을 때 처리
+    socket.on('disconnect', () => {
+      console.log('사용자와의 연결이 종료되었습니다.');
+    });
+  });
+
+// HTTP 서버를 시작합니다.
+  const port = 3000;
+  server.listen(port, () => {
+    console.log('서버주소: localhost ' + port);
+  });
+
+  connection.end();
 });
 
-connection.end();
 
-//------------------------------Tomcat - node.js (Restful.API연동)
-// POST 요청 보내기
-// app.use(function (req, res, next) {
-//   var allowedOrigins = ["http://localhost:8080"];
-//   var origin = req.headers.origin;
-//
-//   res.setHeader("Content-Type", 'application/json; charset="utf-8"');
-//
-//   if (allowedOrigins.indexOf(origin) > -1) {
-//     res.setHeader("Access-Control-Allow-Origin", origin);
-//   }
-//
-//   res.setHeader("Access-Control-Allow-Headers", "X-Requested-With");
-//   res.setHeader("Access-Control-Allow-Methods", "POST, GET, OPTIONS, DELETE");
-//   next();
-// });
-
-// --------------------------------------------------------view engine setup
 app.set('views', path.join(__dirname, '/views'));
 app.set('view engine', 'ejs');
 
@@ -74,25 +105,3 @@ app.use(function(err, req, res, next) {
   res.render('error');
 });
 
-// 소켓 이벤트 처리
-io.on('connection', (socket) => {
-  console.log(ER_USERNAME, '과 연결되었습니다.');
-
-  // 여기에 소켓 이벤트 핸들러 추가
-  socket.on('msg', (message) => {
-    console.log('메시지를 받았습니다:', message);
-    // 받은 메시지를 모든 클라이언트에게 전송
-    socket.broadcast.emit('msg', message);
-  });
-
-  // 클라이언트와의 연결이 종료되었을 때 처리
-  socket.on('disconnect', () => {
-    console.log('사용자와의 연결이 종료되었습니다.');
-  });
-});
-
-// HTTP 서버를 시작합니다.
-const port = 3000;
-server.listen(port, () => {
-  console.log('서버주소: localhost ' + port);
-});

@@ -13,10 +13,14 @@
       margin: 15px;
     }
     .msgBox {
-      border: 1px solid black;
+      border: 1.5px solid black;
       background: white;
       padding: 2px 5px;
       border-radius: 10px;
+    }
+    .msgName{
+      font-weight: bold;
+      color: black;
     }
     #chatContent {
       border: 1px solid #000;
@@ -53,25 +57,42 @@
   $(document).ready(function () {
     var socket = io.connect('http://localhost:3000');
 
-    // receiving a message
+    // 서버로부터 사용자 ID 받기
+    socket.on('username', function (username) {
+      window.username = username;
+      // 받은 UserId를 화면에 표시
+
+    });
+
+    // 메세지 받는
     socket.on('msg', function (data) {
       var msgLine = $('<div class="msgLine">');
+      var msgName = $('<div class="msgName">');
       var msgBox = $('<div class="msgBox">');
-      msgBox.append(data);
+
+      // 수신 메시지인 경우 왼쪽에 표시
+      if (data.receiver === window.username) {
+        msgBox.append(data.sender + ": " + data.message);
+      } else { // 송신 메시지인 경우 오른쪽에 표시
+        //msgName.append(window.username );
+        msgBox.append(data.message);
+      }
+      msgName.append(window.username);
       msgBox.css('display', 'inline-block');
+      msgLine.append(msgName);
       msgLine.append(msgBox);
       $('#chatContent').append(msgLine);
-      // auto scroll down when a user send something
+      // 자동 스크롤 기능
       var chatContent = document.getElementById("chatContent");
       chatContent.scrollTop = chatContent.scrollHeight;
     });
 
-    // sending a message
+    // 메세지 전송 버튼 눌렀을때
     $("#send").on("click", function () {
       sendMessage();
     });
 
-    // Handle enter key press
+    // 엔터 눌렀을때 전송
     $('#myChat').keypress(function (event) {
       var keycode = (event.keyCode ? event.keyCode : event.which);
       if (keycode == '13') {
@@ -83,13 +104,17 @@
       var message = $("#myChat").val().trim();
       if (message !== "") {
         var msgLine = $('<div class="msgLine">');
+        var msgName = $('<div class="msgName">');
         var msgBox = $('<div class="msgBox">');
-        msgBox.append(message);
+
+        msgName.append(window.username);
+        msgBox.append(message); // 송신 메시지 표시
         msgBox.css('display', 'inline-block');
         msgLine.css('text-align', 'right');
         msgLine.append(msgBox);
         $('#chatContent').append(msgLine);
-        socket.emit('msg', message);
+        // 메시지와 사용자 ID를 전송
+        socket.emit('msg', { sender: window.username,  message: message }); // 송신자, 수신자, 메시지를 함께 전송합니다.
         $("#myChat").val("");
         var chatContent = document.getElementById("chatContent");
         chatContent.scrollTop = chatContent.scrollHeight;
@@ -99,3 +124,10 @@
 </script>
 </body>
 </html>
+
+
+
+
+
+
+
